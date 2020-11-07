@@ -20,7 +20,12 @@ class TasksController < ApplicationController
     @task = @project.tasks.create(task_params)
 
     respond_to do |format|
+
+
       if @task.save
+        (@project.users.uniq - [current_user]).each do |user|
+          TaskMailer.with(task: @task, user: user, author: current_user).task_created.deliver_later
+        end
         format.html { redirect_to project_path(@project), notice: 'Task was successfully created.' }
       else
         format.html { redirect_to project_path(@project) }

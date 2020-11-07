@@ -4,7 +4,7 @@ class ProjectsController < ApplicationController
   # GET /projects
   # GET /projects.json
   def index
-    @projects = Project.all
+    @projects = current_user.projects
   end
 
   # GET /projects/1
@@ -30,6 +30,9 @@ class ProjectsController < ApplicationController
 
     respond_to do |format|
       if @project.save
+        (@project.user.uniq - [current_user]).each do |user|
+          ProjectMailer.with(project: @project, user: user, author: current_user).user_added_to_project.deliver_later
+        end
         format.html { redirect_to @project, notice: 'Project was successfully created.' }
         format.json { render :show, status: :created, location: @project }
       else
@@ -71,6 +74,6 @@ class ProjectsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def project_params
-      params.require(:project).permit(:title, :description, :user_id)
+      params.require(:project).permit(:title, :description, user_ids: [])
     end
 end
